@@ -578,27 +578,17 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'stream', other: 'stream'},
       }));
 
-    it.each(['stream', 'iterable'])('%s shared between two collections', type =>
-      runGraph({
-        nodes: {
-          inner: {[type]: type === 'bytes' ? 2 : []},
-          first: {set: ['inner']},
-          second: {set: ['inner']},
-        },
-        roots: {entry: 'first', other: 'second'},
-      }),
-    );
-
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip.each(['bytes'])('%s shared between two collections', type =>
-      runGraph({
-        nodes: {
-          inner: {[type]: type === 'bytes' ? 2 : []},
-          first: {set: ['inner']},
-          second: {set: ['inner']},
-        },
-        roots: {entry: 'first', other: 'second'},
-      }),
+    it.each(['stream', 'bytes', 'iterable'])(
+      '%s shared between two collections',
+      type =>
+        runGraph({
+          nodes: {
+            inner: {[type]: type === 'bytes' ? 2 : []},
+            first: {set: ['inner']},
+            second: {set: ['inner']},
+          },
+          roots: {entry: 'first', other: 'second'},
+        }),
     );
 
     // eslint-disable-next-line jest/no-disabled-tests
@@ -625,30 +615,20 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'iterator', other: 'iterator'},
       }));
 
-    it.each(['stream', 'iterable'])('%s in repeated stream items', type =>
-      runGraph({
-        nodes: {
-          inner: {[type]: type === 'bytes' ? 2 : []},
-          item: {array: ['inner']},
-          outer: {stream: ['item', 'item']},
-        },
-        roots: {entry: 'outer', other: 'outer'},
-      }),
+    it.each(['stream', 'bytes', 'iterable'])(
+      '%s in repeated stream items',
+      type =>
+        runGraph({
+          nodes: {
+            inner: {[type]: type === 'bytes' ? 2 : []},
+            item: {array: ['inner']},
+            outer: {stream: ['item', 'item']},
+          },
+          roots: {entry: 'outer', other: 'outer'},
+        }),
     );
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip.each(['bytes'])('%s in repeated stream items', type =>
-      runGraph({
-        nodes: {
-          inner: {[type]: type === 'bytes' ? 2 : []},
-          item: {array: ['inner']},
-          outer: {stream: ['item', 'item']},
-        },
-        roots: {entry: 'outer', other: 'outer'},
-      }),
-    );
-
-    it.each(['stream', 'iterable'])(
+    it.each(['stream', 'bytes', 'iterable'])(
       '%s shared between different stream items',
       type =>
         runGraph({
@@ -665,24 +645,6 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
           },
           roots: {entry: 'outer', other: 'outer'},
         }),
-    );
-
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip.each(['bytes'])('%s shared between different stream items', type =>
-      runGraph({
-        nodes: {
-          inner:
-            type === 'bytes'
-              ? {bytes: 2}
-              : type === 'iterable'
-                ? {iterable: [], single: true}
-                : {stream: []},
-          first: {array: ['inner']},
-          second: {object: {again: 'inner'}},
-          outer: {stream: ['first', 'second']},
-        },
-        roots: {entry: 'outer', other: 'outer'},
-      }),
     );
 
     it('an async iterable returns a cycle that was already sent', () =>
@@ -908,8 +870,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
       }));
 
     // Include enough values for the FormData reference ID to contain a hex letter.
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('FormData bound to a function in a larger graph', () =>
+    it('FormData bound to a function in a larger graph', () =>
       runGraph({
         nodes: {
           form: {special: 'form data'},
