@@ -518,62 +518,65 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
     });
   });
 
-  if (host !== 'reply') {
-    it('a synchronous iterator that yields itself', () =>
-      withFlightModules(async () => {
-        let next = 0;
-        const iterator = {
-          [Symbol.iterator]() {
-            return this;
-          },
-          next() {
-            return next++ === 0
-              ? {done: false, value: iterator}
-              : {done: true, value: undefined};
-          },
-        };
-        const model = iterator;
-        const transport = startFlightResponse({
-          ReactServerDOMServer,
-          ReactServerDOMClient,
-          WebpackMock,
-          host,
-          model,
-          packetSizes: [1, 21, 4096],
-          yieldBetweenPackets: true,
-          onError(error) {
-            throw error;
-          },
-        });
-        let result;
-        let failure;
-        transport.root.then(
-          value => (result = value),
-          error => (failure = error),
+  it('a synchronous iterator that yields itself', () =>
+    withFlightModules(async () => {
+      let next = 0;
+      const iterator = {
+        [Symbol.iterator]() {
+          return this;
+        },
+        next() {
+          return next++ === 0
+            ? {done: false, value: iterator}
+            : {done: true, value: undefined};
+        },
+      };
+      const model = iterator;
+      const transport = startFlightResponse({
+        ReactServerDOMServer,
+        ReactServerDOMClient,
+        WebpackMock,
+        host,
+        model,
+        body:
+          host === 'reply'
+            ? await ReactServerDOMClient.encodeReply(model)
+            : undefined,
+        bufferedReply: false,
+        packetSizes: [1, 21, 4096],
+        yieldBetweenPackets: true,
+        onError(error) {
+          throw error;
+        },
+      });
+      let result;
+      let failure;
+      transport.root.then(
+        value => (result = value),
+        error => (failure = error),
+      );
+      try {
+        await transport.finish();
+        await transport.drain(
+          () => result !== undefined || failure !== undefined,
+          () => 'the self-yielding iterator',
         );
-        try {
-          await transport.finish();
-          await transport.drain(
-            () => result !== undefined || failure !== undefined,
-            () => 'the self-yielding iterator',
-          );
-          if (failure !== undefined) {
-            throw failure;
-          }
-          expect(result[Symbol.iterator]()).toBe(result);
-          expect(result.next()).toEqual({
-            done: false,
-            value: result,
-          });
-          expect(result.next()).toEqual({
-            done: true,
-            value: undefined,
-          });
-        } finally {
-          await transport.dispose();
+        if (failure !== undefined) {
+          throw failure;
         }
-      }));
-  }
+        expect(result[Symbol.iterator]()).toBe(result);
+        expect(result.next()).toEqual({
+          done: false,
+          value: result,
+        });
+        expect(result.next()).toEqual({
+          done: true,
+          value: undefined,
+        });
+      } finally {
+        await transport.dispose();
+      }
+    }));
 
   // Paste a failing graph's test here.
 
@@ -660,19 +663,16 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'object', other: 'object'},
       }));
 
-    (host === 'reply' ? it.skip : it)(
-      'a large binary value written in two places',
-      () =>
-        runGraph({
-          nodes: {
-            binary: {special: 'large binary'},
-            first: {array: ['binary']},
-            second: {object: {again: 'binary'}},
-            stream: {stream: ['first', 'second']},
-          },
-          roots: {entry: 'stream', other: 'stream'},
-        }),
-    );
+    it('a large binary value written in two places', () =>
+      runGraph({
+        nodes: {
+          binary: {special: 'large binary'},
+          first: {array: ['binary']},
+          second: {object: {again: 'binary'}},
+          stream: {stream: ['first', 'second']},
+        },
+        roots: {entry: 'stream', other: 'stream'},
+      }));
 
     it.each(['stream', 'bytes', 'iterable'])(
       '%s shared between two collections',
@@ -755,17 +755,16 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'array', other: 'array'},
       }));
 
-    (host === 'reply' ? it.skip : it)('Set containing itself', () =>
+    it('Set containing itself', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
           set: {set: ['set', 'ready']},
         },
         roots: {entry: 'set', other: 'set'},
-      }),
-    );
+      }));
 
-    (host === 'reply' ? it.skip : it)('Map containing itself', () =>
+    it('Map containing itself', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
@@ -778,24 +777,20 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
           },
         },
         roots: {entry: 'map', other: 'map'},
-      }),
-    );
+      }));
 
-    (host === 'reply' ? it.skip : it)(
-      'two collections containing each other',
-      () =>
-        runGraph({
-          nodes: {
-            ready: {module: 'export-0'},
-            key: {value: 'a'},
-            a: {set: ['b', 'ready']},
-            b: {map: [['key', 'a']]},
-          },
-          roots: {entry: 'a', other: 'b'},
-        }),
-    );
+    it('two collections containing each other', () =>
+      runGraph({
+        nodes: {
+          ready: {module: 'export-0'},
+          key: {value: 'a'},
+          a: {set: ['b', 'ready']},
+          b: {map: [['key', 'a']]},
+        },
+        roots: {entry: 'a', other: 'b'},
+      }));
 
-    (host === 'reply' ? it.skip : it)('function bound to its array', () =>
+    it('function bound to its array', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
@@ -803,10 +798,9 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
           container: {array: ['fn', 'container', 'ready']},
         },
         roots: {entry: 'container', other: 'container'},
-      }),
-    );
+      }));
 
-    (host === 'reply' ? it.skip : it)('function bound to its Map', () =>
+    it('function bound to its Map', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
@@ -819,50 +813,40 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
           },
         },
         roots: {entry: 'container', other: 'container'},
-      }),
-    );
+      }));
 
-    (host === 'reply' ? it.skip : it)(
-      'cycle first exposed through a bound function',
-      () =>
-        runGraph({
-          nodes: {
-            ready: {module: 'export-0'},
-            fn: {bound: ['region']},
-            region: {set: ['fn', 'region', 'ready']},
-          },
-          roots: {entry: 'fn', other: 'fn'},
-        }),
-    );
+    it('cycle first exposed through a bound function', () =>
+      runGraph({
+        nodes: {
+          ready: {module: 'export-0'},
+          fn: {bound: ['region']},
+          region: {set: ['fn', 'region', 'ready']},
+        },
+        roots: {entry: 'fn', other: 'fn'},
+      }));
 
-    (host === 'reply' ? it.skip : it)(
-      'cycle first exposed through a Promise of a bound function',
-      () =>
-        runGraph({
-          nodes: {
-            ready: {module: 'export-0'},
-            fn: {bound: ['region']},
-            region: {object: {field0: 'fn', field1: 'region', field2: 'ready'}},
-            exposure: {promise: 'fn'},
-          },
-          roots: {entry: 'exposure', other: 'exposure'},
-        }),
-    );
+    it('cycle first exposed through a Promise of a bound function', () =>
+      runGraph({
+        nodes: {
+          ready: {module: 'export-0'},
+          fn: {bound: ['region']},
+          region: {object: {field0: 'fn', field1: 'region', field2: 'ready'}},
+          exposure: {promise: 'fn'},
+        },
+        roots: {entry: 'exposure', other: 'exposure'},
+      }));
 
-    (host === 'reply' ? it.skip : it)(
-      'cycle first exposed through a stream item with a bound function',
-      () =>
-        runGraph({
-          nodes: {
-            ready: {module: 'export-0'},
-            fn: {bound: ['region']},
-            region: {array: ['fn', 'region', 'ready']},
-            item: {array: ['fn']},
-            exposure: {stream: ['item']},
-          },
-          roots: {entry: 'exposure', other: 'exposure'},
-        }),
-    );
+    it('cycle first exposed through a stream item with a bound function', () =>
+      runGraph({
+        nodes: {
+          ready: {module: 'export-0'},
+          fn: {bound: ['region']},
+          region: {array: ['fn', 'region', 'ready']},
+          item: {array: ['fn']},
+          exposure: {stream: ['item']},
+        },
+        roots: {entry: 'exposure', other: 'exposure'},
+      }));
 
     it('async module failing to evaluate after loading', () =>
       runGraph({
@@ -896,7 +880,7 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'stream', other: 'stream'},
       }));
 
-    (host === 'reply' ? it.skip : it)('stream item with a failing module', () =>
+    it('stream item with a failing module', () =>
       runGraph({
         nodes: {
           broken: {module: 'export-0', fail: 'load'},
@@ -904,8 +888,7 @@ describe.each(['node', 'edge', 'reply'])('ReactFlightReaderFuzz (%s)', host => {
           stream: {stream: ['item']},
         },
         roots: {entry: 'stream', other: 'stream'},
-      }),
-    );
+      }));
 
     it('byte stream read with a BYOB reader', () =>
       runGraph({
