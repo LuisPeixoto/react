@@ -854,8 +854,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
       }));
 
     // Describing debug values must not consume their iterators.
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('iterator resolved by a Promise', () =>
+    it('iterator resolved by a Promise', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
