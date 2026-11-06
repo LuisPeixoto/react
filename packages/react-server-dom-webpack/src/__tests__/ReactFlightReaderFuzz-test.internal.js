@@ -1004,12 +1004,30 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'stream', other: 'stream'},
       }));
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('an Error that is its own cause', () =>
+    it('an Error that is its own cause', () =>
       runGraph({
         nodes: {error: {error: 'self cause', cause: 'error'}},
         roots: {entry: 'error', other: 'error'},
       }));
+    it('a streamed Error that is its own cause', () =>
+      runGraph({
+        nodes: {
+          error: {error: 'self cause', cause: 'error'},
+          stream: {stream: ['error']},
+        },
+        roots: {entry: 'stream', other: 'stream'},
+      }));
+
+    it('a streamed object containing an Error whose cause is the object', () =>
+      runGraph({
+        nodes: {
+          error: {error: 'item cause', cause: 'item'},
+          item: {object: {error: 'error'}},
+          stream: {stream: ['item']},
+        },
+        roots: {entry: 'stream', other: 'stream'},
+      }));
+
     // The function and its bound container refer to each other. Both
     // Promises must resolve with complete values once the module loads.
     // eslint-disable-next-line jest/no-disabled-tests
@@ -1246,8 +1264,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         }),
     );
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('Error whose cause is still loading', () =>
+    it('Error whose cause is still loading', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
@@ -1257,8 +1274,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'set', other: 'set'},
       }));
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('Error with cyclic cause', () =>
+    it('Error with cyclic cause', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
