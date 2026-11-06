@@ -603,8 +603,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         roots: {entry: 'stream', other: 'stream'},
       }));
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('async iterator with cyclic items and a return value', () =>
+    it('async iterator with cyclic items and a return value', () =>
       runGraph({
         nodes: {
           ready: {module: 'export-0'},
@@ -780,8 +779,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         afterEof: true,
       }));
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip('streamed array containing itself', () =>
+    it('streamed array containing itself', () =>
       runGraph({
         nodes: {
           item: {array: ['item']},
