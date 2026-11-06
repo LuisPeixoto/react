@@ -935,8 +935,7 @@ describe.each(['node', 'edge'])('ReactFlightReaderFuzz (%s)', host => {
         }),
     );
 
-    // eslint-disable-next-line jest/no-disabled-tests
-    it.skip.each([
+    it.each([
       ['stream', null],
       ['stream', 'keyed'],
       ['iterable', null],
